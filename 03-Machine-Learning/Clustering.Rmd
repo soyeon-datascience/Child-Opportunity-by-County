@@ -1,0 +1,99 @@
+---
+title: "Clustering"
+---
+
+```{r}
+Cities_2015 <- Cities %>% filter(year == 2015)
+Cities_2015 <- data.table(Cities_2015)
+clustering_df <- data.frame(Cities_2015[, c(1:7) := NULL])
+clustering_df <- clustering_df %>%  select(county_code,AP_students,third_g_math,third_g_read,hs_grads,perc_over15_high_skill,college_deg,median_income,home_ownership,supermarket_nearby,green_spaces,walkability)
+```
+
+```{r}
+df_cluster <- aggregate( .~ county_code, data = clustering_df, FUN = mean)
+```
+
+```{r}
+df_cluster_copy <- df_cluster
+# set row names to country labels and then remove for now
+df_cluster[1] <- NULL
+df_cluster <- scale(df_cluster)
+```
+
+```{r}
+packages <- c("tidyverse", "stats", "factoextra", "janitor", "ggiraphExtra", "ggrepel", "MuMIn", "gridExtra")
+invisible(lapply(packages, library, character.only = TRUE))
+df_cluster <- na.omit(df_cluster)
+set.seed(123)
+fviz_nbclust(df_cluster, kmeans, method = "wss") +
+  ggtitle("Elbow plot") +
+  theme_classic() +
+  theme(text = element_text(color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+```{r}
+df_cluster_name <- as.data.frame(df_cluster)
+df_cluster_name$county_name <- df_cluster_copy$county_name
+kmeans_3 <- kmeans(df_cluster, centers = 3, nstart = 10)
+df_cluster_name$clusters3 <- as.factor(kmeans_3$cluster)
+df_cluster_name$num <- seq(1, nrow(df_cluster_name))
+```
+
+```{r}
+kmeans_3
+```
+
+```{r}
+fviz_cluster(kmeans_3, data = df_cluster, geom = "point")  +
+  theme_minimal() +
+  theme(text = element_text(color = "black")) +
+  ggtitle("") +
+  theme(text = element_text (color = "black")) +
+  theme_bw() +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black")) +
+  geom_label_repel(aes(label = df_cluster_copy$county_code,
+                       col = df_cluster_copy$clusters3))
+```
+
+```{r}
+df_radar <- as.data.frame(kmeans_3$centers)
+cluster <- 1:3
+df_radar <- cbind(cluster, df_radar)
+library(ggradar)
+mycolor <- "#1C6193"
+df_radar <- df_radar %>%
+  rename(
+    'AP Enrolled' = AP_students,
+    'College Degree' = college_deg,
+    'High School
+Degree' = hs_grads,
+    '3rd Grade Math' = third_g_math,
+    '3rd Grade Read' = third_g_read,
+    'Near Supermarket' = supermarket_nearby,
+    'Green Space' = green_spaces,
+    'Walkability' = walkability,
+    'Home
+Owned' = home_ownership,
+    'High Skill' = perc_over15_high_skill,
+    'Incoome' = median_income,
+  )
+p <- ggRadar(df_radar, aes(fill = cluster),
+             rescale = FALSE, legend.position = "none",
+             size = 1, interactive = FALSE, use.label = TRUE, legend.text.size = 3
+             ) +
+  facet_wrap(~cluster) +
+  scale_y_discrete(breaks = NULL) + # don't show ticks
+  theme(axis.text.x = element_text(size = 10)) + # larger label sizes
+  # adjust colors
+  ggtitle("Anlayzing Clusters of Counties") +
+  theme_minimal() +
+  theme(text = element_text(size = 6, color = "black"), plot.title = element_text(size = 20))
+print(p)
+?ggRadar
+df_radar
+```

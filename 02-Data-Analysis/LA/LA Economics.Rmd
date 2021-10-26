@@ -1,0 +1,90 @@
+---
+title: "R Notebook"
+---
+
+# College vs Income
+
+## Graphs
+```{r}
+df_la %>% mutate(City_Suburb = ifelse(county_code == 'Los Angeles','City','Suburb')) %>% 
+  ggplot( aes(x = college_deg, y = median_income))+
+  geom_point(aes(color = City_Suburb), alpha = .5, size = 2)+
+  scale_y_continuous(labels = function(x){paste0("$", x/1000, "K")})+
+  scale_x_continuous(labels = function(x){paste0(x, "%")})+
+  labs(
+    title = 'Median Income vs College Degree in LA',
+    x = 'College Degree',
+    y = 'Median Income',
+    color = 'City and Suburb'
+  )+
+  theme_classic()
+```
+
+# High Skill vs Income
+
+## Graphs
+```{r}
+df_la %>% mutate(City_Suburb = ifelse(county_code == 'Los Angeles','City','Suburb')) %>% 
+  ggplot( aes(x = perc_over15_high_skill, y = median_income))+
+  geom_point(aes(color = City_Suburb), alpha = .5, size = 2)+
+  scale_y_continuous(labels = function(x){paste0("$", x/1000, "K")})+
+  scale_x_continuous(labels = function(x){paste0(x, "%")})+
+  labs(
+    title = 'Median Income vs Skilled Labor in LA',
+    x = 'Skilled Labor',
+    y = 'Median Income',
+    color = 'City and Suburb'
+  )+
+  theme_classic()+
+```
+
+
+# Homeownship
+
+## Graphs
+```{r}
+ggplot(df_la, aes(x = reorder(county_code, home_ownership), y = median_income)) +
+  geom_violin() +
+  geom_point(position = position_jitter(width = 0.4), alpha = .35, aes(color = home_ownership)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_color_viridis(name = "% Home Ownership",
+                      labels = function(x){paste0(x, "%")}) +
+  scale_y_continuous(labels = function(x){paste0("$", x/1000, "K")}) +
+    labs(
+    x = "County",
+    y = "Median Income",
+    title = "Home Ownership in LA and its Suburbs"
+  ) +
+  geom_hline(yintercept = median(df_la$median_income), color = "red", linetype = "dashed")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, colour = text_color))
+```
+
+# Income
+
+## Data Selection
+```{r}
+income_LA <- df_la %>%
+  group_by(county_code)%>%
+  summarise(mean_inc = mean(median_income))%>%
+  mutate(deviation= mean_inc - income$mean)%>%
+  arrange(desc(mean_inc))
+```
+
+## Graphs
+```{r}
+ggplot(income_LA, aes(x = reorder(county_code, deviation), y = deviation,
+           fill = deviation >0))+
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  scale_fill_discrete(name = "", labels = c("Below Average", "Above Average"))+
+  labs(
+    title="Household income in LA",
+    subtitle="We can see how each city is above or below the area average, $66K",
+    x = "City",
+    y = "Amount Difference"
+  )+
+  theme_bw()+
+  theme(axis.text.y = element_text(angle = 45, hjust = 1, colour = text_color))
+```
+

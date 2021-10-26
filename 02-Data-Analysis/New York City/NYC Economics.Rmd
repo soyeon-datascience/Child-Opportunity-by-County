@@ -1,0 +1,92 @@
+---
+title: "Texas Economics"
+---
+
+# College Degree vs Income
+
+## Graphs
+```{r}
+library(viridis)
+```
+
+
+```{r}
+df_nyc %>% mutate(City_Outter_Boroughs = ifelse(county_code == 'Manhattan','City','Outter Boroughs')) %>% 
+  ggplot( aes(x = college_deg, y = median_income))+
+  geom_point(aes(color = City_Outter_Boroughs), alpha = .5, size = 2)+
+  scale_y_continuous(labels = function(x){paste0("$", x/1000, "K")})+
+  scale_x_continuous(labels = function(x){paste0(x, "%")})+
+  labs(
+    title = 'Median Income vs College Degree in Manhattan',
+    x = 'College Degree',
+    y = 'Median Income',
+    color = 'City and Outter Boroughs'
+  )+
+  theme_classic()
+```
+
+# High Skill vs Income
+
+## Graphs
+```{r}
+df_nyc %>% mutate(City_Outter_Boroughs = ifelse(county_code == 'Manhattan','City','Outter Boroughs')) %>% 
+  ggplot( aes(x = perc_over15_high_skill, y = median_income))+
+  geom_point(aes(color = City_Outter_Boroughs), alpha = .5, size = 2)+
+  scale_y_continuous(labels = function(x){paste0("$", x/1000, "K")})+
+  scale_x_continuous(labels = function(x){paste0(x, "%")})+
+  labs(
+    title = 'Median Income vs Skilled Labor in Manhattan',
+    x = 'Skilled Labor',
+    y = 'Median Income',
+    color = 'City and Outter Boroughs'
+  )+
+  theme_classic()
+```
+
+# Homeownership
+
+```{r}
+ggplot(df_nyc, aes(x = reorder(county_code, home_ownership), y = median_income)) +
+  geom_violin() +
+  geom_point(position = position_jitter(width = 0.4), alpha = .35, aes(color = home_ownership)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_color_viridis(name = "% Home Ownership",
+                      labels = function(x){paste0(x, "%")}) +
+  scale_y_continuous(labels = function(x){paste0("$", x/1000, "K")}) +
+    labs(
+    x = "County",
+    y = "Median Income",
+    title = "Home Ownership in NYC and its Outer Boroughs"
+  ) +
+  geom_hline(yintercept = median(df_nyc$median_income), color = "red", linetype = "dashed")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, colour = text_color))
+  
+```
+# Income
+
+## Data Selection
+```{r}
+income_Nyc <- df_nyc %>%
+  group_by(county_code)%>%
+  summarise(mean_inc = mean(median_income))%>%
+  mutate(deviation= mean_inc - income$mean)%>%
+  arrange(desc(mean_inc))
+```
+
+## Graphs
+```{r}
+ggplot(income_Nyc, aes(x = reorder(county_code, deviation), y = deviation,
+           fill = deviation >0))+
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  scale_fill_discrete(name = "", labels = c("Below Average", "Above Average"))+
+  labs(
+    title="Household income in NYC",
+    subtitle="We can see how each city is above or below the area average, $66K",
+    x = "City",
+    y = "Amount Difference"
+  )+
+  theme_bw()+
+  theme(axis.text.y = element_text(angle = 45, hjust = 1, colour = text_color))
+```
